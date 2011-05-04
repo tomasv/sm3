@@ -8,6 +8,11 @@ spectralRadius m = maximum (map (abs) (concat m))
 vectorSpectralRadius :: [Double] -> Double
 vectorSpectralRadius v = maximum (map (abs) v)
 
+-- TODO: Matrix inverse calculation
+inverse :: [[Double]] -> [[Double]]
+inverse m = m
+
+
 -- Vector subtraction
 (|-|) :: [Double] -> [Double] -> [Double]
 (|-|) a b = zipWith (-) a b
@@ -20,6 +25,9 @@ vectorSpectralRadius v = maximum (map (abs) v)
 (||*|) :: [[Double]] -> [Double] -> [Double]
 (||*|) a b = zipWith (vectorMult) a (repeat b)
     where vectorMult x y = sum $ zipWith (*) x y
+
+(||-||) :: [[Double]] -> [[Double]] -> [[Double]]
+(||-||) a b = zipWith (zipWith (-)) a b
 
 -- Vector dot product
 (|.|) :: [Double] -> [Double] -> Double
