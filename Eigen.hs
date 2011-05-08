@@ -4,11 +4,15 @@ import MatrixVector
 import Datatypes
 import Extra
 
-import Debug.Trace
-
-approximationsUntilPrecise :: Double -> Double -> Matrix -> Vector -> [Result]
-approximationsUntilPrecise err lambda a x = takeWhile' (check err) (series lambda a x)
+approximationsUntilPrecise :: Double -> Double -> Matrix -> Vector -> Either String [Result]
+approximationsUntilPrecise err lambda a x = do
+    if convergenceCondition a
+       then Right $ takeWhile' (check err) (series lambda a x)
+       else Left "Matrix not tridiagonal symmetric."
     where check err (EigenResult _ _ err1 err2) = err1 >= err || err2 >= err
+
+convergenceCondition :: Matrix -> Bool
+convergenceCondition m = all ($ m) [symmetric, tridiagonal]
 
 series :: Double -> Matrix -> Vector -> [Result]
 series lambda a x = result : series lambda' a x'

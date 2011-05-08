@@ -15,12 +15,12 @@ convergenceCondition m = all (rowCheck) (m `zip` [0..])
     where rowCheck (r, index) = (r !! index) > sum (omitElementAt index r)
 
 seriesP :: Double -> Double -> Double -> Matrix -> Vector -> Vector -> Results
-seriesP err oldErr oldRes a b x = takeWhile' (\(JacobiResult _ e r) -> notPrecise e r) (iterateJacobi a b x)
-    where notPrecise a b = a >= err || b >= err
+seriesP err oldErr oldRes a b x = takeWhile' (notPrecise) (series a b x)
+    where notPrecise (JacobiResult _ a b) = a >= err || b >= err
 
-iterateJacobi :: Matrix -> Vector -> Vector -> Results
-iterateJacobi a b x = drop 1 $ iterate (j) (JacobiResult x 0.0 0.0)
-    where j = (\(JacobiResult result _ _) -> iteration a b result)
+series :: Matrix -> Vector -> Vector -> Results
+series a b x = result : series a b x'
+    where result@(JacobiResult x' _ _) = iteration a b x
 
 iteration :: Matrix -> Vector -> Vector -> Result
 iteration a b x = JacobiResult x' err res

@@ -2,6 +2,7 @@ module MatrixVector where
 
 import Array (listArray, bounds, elems)
 import Matrix.LU (inverse)
+import qualified Data.List as L
 
 import Extra
 
@@ -32,6 +33,19 @@ inverseMatrix m = splitInto width $ elems a
     where height = length m
           width  = length $ head m
           a = inverse $ listArray ((1::Int,1::Int), (width, height)) (concat m)
+
+-- Symmetricity check
+symmetric :: Matrix -> Bool
+symmetric m = (L.transpose m) == m
+
+-- Tridiagonal check
+tridiagonal :: Matrix -> Bool
+tridiagonal m = symmetric m && allZeroesExcept 3 body && allZeroesExcept 2 edgeRows
+    where zeroes = filter (== 0.0)
+          except n = (== ((length m) - n))
+          allZeroesExcept n = all ((except n) . length . zeroes)
+          edgeRows = head m : last m : []
+          body = init . tail $ m
 
 -- Vector subtraction
 (|-|) :: Vector -> Vector -> Vector

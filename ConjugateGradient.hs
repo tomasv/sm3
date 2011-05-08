@@ -12,7 +12,7 @@ approximationsUntilPrecise err a f x = do
        else Left "Invalid matrix."
 
 convergenceCondition :: Matrix -> Bool
-convergenceCondition m = (L.transpose m) == m
+convergenceCondition = symmetric
 
 seriesPInit :: Double -> Matrix -> Vector -> Vector -> Results
 seriesPInit err a f x = seriesP err a f x z p
