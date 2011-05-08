@@ -1,36 +1,56 @@
 module ConjugateGradient where
 
-import Vector
+import MatrixVector
+import Datatypes
+import qualified Data.List as L
+import Extra
 
-cgApproximationsUntilPrecise :: Double -> [[Double]] -> [Double] -> [Double] -> [[Double]]
-cgApproximationsUntilPrecise err a f x = cgSeries err a f x z p
+approximationsUntilPrecise :: Double -> Matrix -> Vector -> Vector -> Either String Results
+approximationsUntilPrecise err a f x = do
+    if convergenceCondition a
+       then Right $ seriesPInit err a f x
+       else Left "Invalid matrix."
+
+convergenceCondition :: Matrix -> Bool
+convergenceCondition m = (L.transpose m) == m
+
+seriesPInit :: Double -> Matrix -> Vector -> Vector -> Results
+seriesPInit err a f x = seriesP err a f x z p
     where z = initialZ a f x
           p = initialP a f x
 
-cgSeries :: Double -> [[Double]] -> [Double] -> [Double] -> [Double] -> [Double] -> [[Double]]
-cgSeries err a f x z p = x' : if precisionCheck err z'
-                                 then []
-                                 else cgSeries err a f x' z' p'
+seriesP :: Double -> Matrix -> Vector -> Vector -> Vector -> Vector -> Results
+seriesP err a f x z p = takeWhile' (\(CgResult _ e r) -> notPrecise e r) (series a f x z p)
+    where notPrecise e r = e >= err
+
+series :: Matrix -> Vector -> Vector -> Vector -> Vector -> Results
+series a f x z p = result : series a f x' z' p'
     where
         r = a ||*| p
-        x' = cgIteration x z p r
-        z' = z |-| ((tau z r p) *| r)
+        result = iteration a x z p r
+        (CgResult x' _ z') = result
         p' = z' |+| ((beta z' z) *| p)
 
-cgIteration :: [Double] -> [Double] -> [Double] -> [Double] -> [Double]
-cgIteration x z p r = x |-| ((tau z r p) *| p)
+iteration :: Matrix -> Vector -> Vector -> Vector -> Vector -> Result
+iteration a x z p r = CgResult (x |-| ((tau z r p) *| p)) err res
+    where r = a ||*| p
+          res = residual z r p
+          err = sqrt (res |.| res)
 
-precisionCheck :: Double -> [Double] -> Bool
+residual :: Vector -> Vector -> Vector -> Vector
+residual z r p = z |-| ((tau z r p) *| r)
+
+precisionCheck :: Double -> Vector -> Bool
 precisionCheck err z = z |.| z < err**2
 
-initialP :: [[Double]] -> [Double] -> [Double] -> [Double]
+initialP :: Matrix -> Vector -> Vector -> Vector
 initialP a f x = (a ||*| x) |-| f
 
-initialZ :: [[Double]] -> [Double] -> [Double] -> [Double]
+initialZ :: Matrix -> Vector -> Vector -> Vector
 initialZ = initialP
 
-tau :: [Double] -> [Double] -> [Double] -> Double
+tau :: Vector -> Vector -> Vector -> Double
 tau z r p = (z |.| p) / (r |.| p)
 
-beta :: [Double] -> [Double] -> Double
+beta :: Vector -> Vector -> Double
 beta zk1 zk = (zk1 |.| zk1) / (zk |.| zk)
