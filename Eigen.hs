@@ -1,58 +1,40 @@
 module Eigen where
 
-import Control.Monad.Writer
-import Vector
-import Array (listArray, bounds, elems)
-import Matrix.LU (inverse)
+import MatrixVector
+import Datatypes
+import Extra
 
--- runLambdaSeries :: [[Double]] -> Double -> Double -> [Double]
--- runLambdaSeries a l r = let lambda = lambdaApproximation l r
---              in lambdaSeries lambda a (take (length a) $ repeat lambda)
+import Debug.Trace
 
-lambdaSeriesWithPrecision :: Double -> Double -> [[Double]] -> [Double] -> [Double]
-lambdaSeriesWithPrecision err lambda a x = if precisionCheck2 && precisionCheck1
-                                              then [lambda, lambda']
-                                              else lambda : lambdaSeriesWithPrecision err lambda' a x'
-    where (lambda', x') = nextLambdaAndVector lambda a x
-          precisionCheck1 = vectorSpectralRadius (x' |-| x) <= err
-          precisionCheck2 = abs (lambda' - lambda) <= err
+approximationsUntilPrecise :: Double -> Double -> Matrix -> Vector -> [Result]
+approximationsUntilPrecise err lambda a x = takeWhile' (check err) (series lambda a x)
+    where check err (EigenResult _ _ err1 err2) = err1 >= err || err2 >= err
 
-lambdaSeries :: Int -> Double -> [[Double]] -> [Double] -> [Double]
-lambdaSeries 0 lambda a x = []
-lambdaSeries n lambda a x =
-    let (lambda', x') = nextLambdaAndVector lambda a x
-    in lambda : (lambdaSeries (n - 1) lambda' a x')
+series :: Double -> Matrix -> Vector -> [Result]
+series lambda a x = result : series lambda' a x'
+    where result@(EigenResult lambda' x' _ _) = nextValueAndVector lambda a x
 
-lambdaSeriesW :: Int -> Double -> [[Double]] -> [Double] -> Writer [[Double]] [Double]
-lambdaSeriesW 0 lambda a x = return []
-lambdaSeriesW n lambda a x = do
-    let (lambda', x') = nextLambdaAndVector lambda a x
-    l <- lambdaSeriesW (n - 1) lambda' a x'
-    tell [x]
-    return $ lambda : l
-
-nextLambdaAndVector :: Double -> [[Double]] -> [Double] -> (Double, [Double])
-nextLambdaAndVector lambda a x = ((a ||*| x') |.| x', x')
-    where x' = map (/ (vectorSpectralRadiusSquared y')) y'
+nextValueAndVector :: Double -> Matrix -> Vector -> Result
+nextValueAndVector lambda a x = EigenResult lambda' x' err1 err2
+    where lambda' = (a ||*| x') |.| x'
+          x' = correctedVector x y'
           y' = ae ||*| x
           ae = inverseMatrix $ a ||-|| (lambda *|| e)
           e = identityMatrix (length a)
+          err1 = vectorSpectralRadiusSquared (x' |-| x)
+          err2 = abs (lambda' - lambda)
 
-identityMatrix :: Int -> [[Double]]
-identityMatrix n = let row = 1.0 : (take (n - 1) $ repeat 0.0)
-                       nextRow r = take n $ drop (n - 1) $ cycle r
-                   in scanl (\x y -> nextRow x) row [1..n-1]
+correctedVector :: Vector -> Vector -> Vector
+correctedVector x y' = vectorCorrection err' x'
+    where x' = map (/ (vectorSpectralRadiusSquared y')) y'
+          err' = vectorSpectralRadiusSquared (x' |-| x)
+
+p :: Double
+p = 0.01
+
+vectorCorrection :: Double -> Vector -> Vector
+vectorCorrection err x' | (err - p) < 2 && (err + p) > 2 = map (negate) x'
+                        | otherwise = x'
 
 lambdaApproximation :: Double -> Double -> Double
 lambdaApproximation a b = (a + b) / 2
-
-inverseMatrix :: [[Double]] -> [[Double]]
-inverseMatrix m = splitInto width $ elems a
-    where height = length m
-          width  = length $ head m
-          a = inverse $ listArray ((1::Int,1::Int), (width, height)) (concat m)
-
-splitInto :: Int -> [a] -> [[a]]
-splitInto n [] = []
-splitInto n xs  = left : splitInto n right
-    where (left, right) = splitAt n xs

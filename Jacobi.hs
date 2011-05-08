@@ -41,7 +41,3 @@ sigma i a x = sum $ zipWith (*) aFiltered xFiltered
     where
         aFiltered = omitElementAt i a
         xFiltered = omitElementAt i x 
-
--- Other helper functions
-omitElementAt :: Int -> [a] -> [a]
-omitElementAt i list = let (left, right) = splitAt i list in left ++ (tail right)
