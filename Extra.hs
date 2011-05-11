@@ -1,6 +1,11 @@
 
 module Extra where
 
+
+-- generate interval points, starting from a to b, split into n intervals
+intervals a b n = let h = (b - a) / n
+                   in [a, (a + h)..b]
+
 -- inclusive takeWhile version
 takeWhile' :: (a -> Bool) -> [a] -> [a]
 takeWhile' _ [] = []
