@@ -1,5 +1,6 @@
 module Gauss where
 
+import Datatypes
 import Extra
 
 -- 3 point Gauss coeficients and nodes
@@ -24,20 +25,18 @@ intervalPairs a b n = let shifted = drop 1 $ cycle (intervals a b n)
 
 complexGauss3 a b f n = sum $ map (\(x, y) -> gauss3 f x y) (intervalPairs a b n)
 
-type Result = (Double, Double, Double, Double)
+runSeriesP err f a b n = takeWhile' (\(DResult _ e _) -> e >= err) (runSeries a b f n)
 
-runSeriesP err a b f n = takeWhile' (\(_, e, _, _) -> e >= err) (runSeries a b f n)
-
-runSeries a b f n = series (result, err, n, 0.0) a b f (n * 2)
+runSeries a b f n = series (DResult result err n) a b f (n * 2)
     where result = complexGauss3 a b f n
           previous = complexGauss3 a b f (n / 2)
           err = abs (result - previous) / (2^2 - 1)
 
 series result a b f n = result : series newResult a b f (n * 2)
     where approximation = complexGauss3 a b f n
-          (oldApproximation, _, oldErr, _) = result
+          (DResult oldApproximation _ _) = result
           err = abs (approximation - oldApproximation) / (2^2 - 1)
-          newResult = (approximation, err, n, oldErr / err)
+          newResult = (DResult approximation err n)
 
 gaussError a b f n = ((sn n) - (sn (n / 2))) / (2^2 - 1)
     where sn m = complexGauss3 a b f m

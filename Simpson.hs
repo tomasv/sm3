@@ -1,7 +1,24 @@
 module Simpson where
 
+import Datatypes
+import Extra
+import Debug.Trace
+
 myFunc x = ((sqrt x) - 1) ^ 2
 myFunc2 = (^2) . (subtract 1) . sqrt
+
+runSeriesP err f a b n = takeWhile' (\(DResult _ e _) -> e >= err) $ series firstResult f a b (n * 2)
+    where firstResult = DResult current e n
+          current = simpsonA f (intervals a b n)
+          previous = simpsonA f (intervals a b (n/2))
+          e = abs (current - previous) / (2^2 - 1)
+
+series oldResult f a b n = oldResult : series newResult f a b (n * 2)
+    where (DResult oldApproximation _ _) = oldResult
+          err = abs (newApproximation - oldApproximation) / (2^2 - 1)
+          newApproximation = simpsonA f (intervals a b n)
+          newResult = (DResult newApproximation err n)
+
 
 simpsonA :: (Double -> Double) -> [Double] -> Double
 simpsonA f xs = ((b - a) / (3*n)) * ((f a) + 4 * oddSum + 2 * evenSum + (f b))
