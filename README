@@ -1,3 +1,6 @@
 An assignment for Numerical Methods subject in university I did in Haskell.
 
 Solves linear equation systems of the form A x = b (A x = f) using Jacobi's and conjugate gradient methods.
+
+A few more algorithms added.
+Simpson and Gauss quadrature numerical integration methods.
