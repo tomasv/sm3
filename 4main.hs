@@ -4,6 +4,8 @@ import System.Environment
 
 import qualified Simpson as S
 import qualified Gauss as G
+import Datatypes
+import Debug.Trace
 
 function :: Double -> Double
 function x = (sqrt(x) - 1)^2
@@ -16,7 +18,7 @@ simpsonDemo precision limit = do
 
 gaussDemo :: Double -> Int -> IO ()
 gaussDemo precision limit = do
-    let results = G.runSeriesP precision (function) 1 2 2
+    let results = G.runSeriesP precision (function) 1 10 2
     putStrLn "Gauss:"
     putStrLn $ unlines (map (show) results)
 

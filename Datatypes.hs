@@ -6,7 +6,7 @@ type Results = [Result]
 data Result = JacobiResult Vector Double Double |
               CgResult Vector Double Vector |
               EigenResult Double Vector Double Double |
-              DResult Double Double Double
+              DResult Double Double Double Double
 
 instance Show Result where
-    show (DResult a err n) = (show a) ++ " err: " ++ (show err) ++ " n: " ++ (show n)
+    show (DResult a err n diff) = (show a) ++ " err: " ++ (show err) ++ " n: " ++ (show n) ++ " diff: " ++ (show diff)
